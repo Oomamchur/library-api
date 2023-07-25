@@ -3,7 +3,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from library.models import Book, Borrowing
 from library.permissions import IsAdminOrReadOnly
-from library.serializers import BookSerializer, BookListSerializer, BorrowingSerializer, BorrowingListSerializer
+from library.serializers import BookSerializer, BookListSerializer, BorrowingSerializer, BorrowingListSerializer, \
+    BorrowingCreateSerializer
 
 
 class BookViewSet(viewsets.ModelViewSet):
@@ -25,10 +26,14 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
             return BorrowingListSerializer
+        if self.action == "create":
+            return BorrowingCreateSerializer
         return BorrowingSerializer
 
     def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+        queryset = self.queryset.filter(user=self.request.user)
+
+        return queryset
 
     def get_permissions(self):
         if self.action in ("update", "partial_update", "destroy"):
