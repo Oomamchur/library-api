@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from library.models import Book, Borrowing
 from library.permissions import IsAdminOrReadOnly
@@ -29,6 +29,12 @@ class BorrowingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsAdminUser()]
+
+        return super().get_permissions()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
