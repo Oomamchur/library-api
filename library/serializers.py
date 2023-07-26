@@ -1,3 +1,5 @@
+from datetime import date
+
 from rest_framework import serializers
 
 from library.models import Book, Borrowing
@@ -48,6 +50,10 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         if attrs["book"].inventory == 0:
             raise serializers.ValidationError(
                 "There is no such book available now"
+            )
+        if attrs["expected_return_date"] < date.today():
+            raise serializers.ValidationError(
+                "Return date can't be earlier than today"
             )
         return data
 
