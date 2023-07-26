@@ -12,7 +12,8 @@ from library.serializers import (
     BookListSerializer,
     BorrowingSerializer,
     BorrowingListSerializer,
-    BorrowingCreateSerializer,
+    BorrowingListStaffSerializer,
+    BorrowingDetailSerializer,
 )
 
 
@@ -45,13 +46,15 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"] and self.request.user.is_staff:
-            return BorrowingSerializer
-        if self.action == "create":
-            return BorrowingCreateSerializer
-        if self.action in ("update", "partial_update"):
-            return BorrowingSerializer
-        return BorrowingListSerializer
+        if self.action in ["list", "retrieve"]:
+            if self.request.user.is_staff:
+                return BorrowingListStaffSerializer
+            return BorrowingListSerializer
+
+        if self.action in ("update", "partial_update", "return"):
+            return BorrowingDetailSerializer
+
+        return BorrowingSerializer
 
     def get_queryset(self):
         queryset = self.queryset
