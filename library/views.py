@@ -36,7 +36,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
 
 class BorrowingViewSet(viewsets.ModelViewSet):
-    queryset = Borrowing.objects.select_related("book")
+    queryset = Borrowing.objects.all()
     serializer_class = BorrowingSerializer
     permission_classes = (IsAuthenticated,)
 
