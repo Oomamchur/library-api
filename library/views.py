@@ -3,8 +3,13 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from library.models import Book, Borrowing
 from library.permissions import IsAdminOrReadOnly
-from library.serializers import BookSerializer, BookListSerializer, BorrowingSerializer, BorrowingListSerializer, \
-    BorrowingCreateSerializer
+from library.serializers import (
+    BookSerializer,
+    BookListSerializer,
+    BorrowingSerializer,
+    BorrowingListSerializer,
+    BorrowingCreateSerializer,
+)
 
 
 class BookViewSet(viewsets.ModelViewSet):
@@ -19,19 +24,31 @@ class BookViewSet(viewsets.ModelViewSet):
 
 
 class BorrowingViewSet(viewsets.ModelViewSet):
-    queryset = Borrowing.objects.all()
+    queryset = Borrowing.objects.select_related("book")
     serializer_class = BorrowingSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
-            return BorrowingListSerializer
+        if self.action in ["list", "retrieve"] and self.request.user.is_staff:
+            return BorrowingSerializer
         if self.action == "create":
             return BorrowingCreateSerializer
-        return BorrowingSerializer
+        if self.action in ("update", "partial_update"):
+            return BorrowingSerializer
+        return BorrowingListSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.filter(user=self.request.user)
+        queryset = self.queryset
+        is_active = self.request.query_params.get("is_active")
+        user_id = self.request.query_params.get("user_id")
+
+        if is_active:
+            if is_active.lower().capitalize() == "True":
+                queryset = queryset.filter(actual_return_date=None)
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(user=self.request.user)
+        elif user_id:
+            queryset = queryset.filter(user_id=int(user_id))
 
         return queryset
 

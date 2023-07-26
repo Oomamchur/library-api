@@ -16,20 +16,39 @@ class BookListSerializer(BookSerializer):
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
+    book = BookListSerializer(many=False, read_only=True)
+
     class Meta:
         model = Borrowing
-        fields = ("id", "borrow_date", "expected_return_date", "actual_return_date", "book")
+        fields = (
+            "id",
+            "borrow_date",
+            "expected_return_date",
+            "actual_return_date",
+            "book",
+            "user",
+        )
 
 
 class BorrowingListSerializer(BorrowingSerializer):
-    book = BookListSerializer(many=False, read_only=True)
+    class Meta:
+        model = Borrowing
+        fields = (
+            "id",
+            "borrow_date",
+            "expected_return_date",
+            "actual_return_date",
+            "book",
+        )
 
 
-class BorrowingCreateSerializer(BorrowingSerializer):
+class BorrowingCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         data = super(BorrowingCreateSerializer, self).validate(attrs)
         if attrs["book"].inventory == 0:
-            raise serializers.ValidationError("There is no such book available now")
+            raise serializers.ValidationError(
+                "There is no such book available now"
+            )
         return data
 
     def create(self, validated_data):
@@ -40,5 +59,8 @@ class BorrowingCreateSerializer(BorrowingSerializer):
 
     class Meta:
         model = Borrowing
-        fields = ("id", "expected_return_date", "book")
-
+        fields = (
+            "id",
+            "expected_return_date",
+            "book",
+        )
