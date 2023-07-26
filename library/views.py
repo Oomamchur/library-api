@@ -1,6 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-
+from rest_framework.response import Response
+from datetime import date
 from library.models import Book, Borrowing
 from library.permissions import IsAdminOrReadOnly
 from library.serializers import (
@@ -69,6 +71,23 @@ class BorrowingViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
 
         return super().get_permissions()
+
+    @action(
+        methods=["POST"],
+        detail=True,
+        url_path="return"
+    )
+    def return_book(self, request, pk=None):
+        borrowing = self.get_object()
+        if borrowing.actual_return_date is None:
+            borrowing.actual_return_date = date.today()
+            borrowing.book.inventory += 1
+            borrowing.book.save()
+            borrowing.save()
+
+            return Response(status=status.HTTP_200_OK)
+
+        return Response("Book is already returned", status.HTTP_406_NOT_ACCEPTABLE)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
