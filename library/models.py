@@ -6,7 +6,7 @@ from django.db import models
 class Book(models.Model):
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
-    inventory = models.IntegerField()
+    inventory = models.PositiveIntegerField()
     daily_fee = models.DecimalField(max_digits=5, decimal_places=2)
 
     cover_choices = (("HARD", "hard cover"), ("SOFT", "soft cover"))
@@ -16,9 +16,9 @@ class Book(models.Model):
     )
 
     def clean(self) -> None:
-        if self.inventory < 0:
+        if self.daily_fee < 0:
             raise ValidationError(
-                f"Inventory should be a positive number, not {self.inventory}"
+                f"Daily fee should be a positive number, not {self.daily_fee}"
             )
 
     def save(self, *args, **kwargs):
