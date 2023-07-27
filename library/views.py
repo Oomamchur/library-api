@@ -2,7 +2,7 @@ from datetime import date
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, status, serializers
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -69,7 +69,6 @@ class BorrowingViewSet(viewsets.ModelViewSet):
             if self.request.user.is_staff:
                 return BorrowingListStaffSerializer
             return BorrowingListSerializer
-
         if self.action in ("update", "partial_update"):
             return BorrowingDetailSerializer
 
