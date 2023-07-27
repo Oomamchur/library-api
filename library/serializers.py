@@ -77,8 +77,11 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Return date can't be earlier than today"
             )
+        if instance.actual_return_date:
+            raise serializers.ValidationError("Book is already returned")
         instance.expected_return_date = return_date
         instance.save()
+
         return instance
 
     class Meta:

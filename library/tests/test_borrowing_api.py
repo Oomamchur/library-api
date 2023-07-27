@@ -2,24 +2,25 @@ from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse, reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
-from django.urls import reverse, reverse_lazy
 
 from library.models import Book, Borrowing
 from library.serializers import (
-    BorrowingListSerializer, BorrowingSerializer, BorrowingListStaffSerializer,
+    BorrowingListSerializer,
+    BorrowingListStaffSerializer,
 )
 
 BORROWING_URL = reverse("library:borrowing-list")
 
 
 def detail_url(borrowing_id: int):
-    return reverse_lazy("library:borrowing-detail", args=[borrowing_id])
+    return reverse("library:borrowing-detail", args=[borrowing_id])
 
 
 def return_borrowing_url(borrowing_id):
-    return detail_url(borrowing_id) + "return"
+    return reverse("library:borrowing-return-book", args=[borrowing_id])
 
 
 def test_book(**params) -> Book:
@@ -98,7 +99,9 @@ class AuthenticatedBorrowingApiTests(TestCase):
 
     def test_filter_active_borrowings(self) -> None:
         borrowing1 = test_borrowing(user=self.user)
-        borrowing2 = test_borrowing(user=self.user, actual_return_date=date.today())
+        borrowing2 = test_borrowing(
+            user=self.user, actual_return_date=date.today()
+        )
 
         serializer1 = BorrowingListSerializer(borrowing1)
         serializer2 = BorrowingListSerializer(borrowing2)
@@ -108,23 +111,30 @@ class AuthenticatedBorrowingApiTests(TestCase):
         self.assertNotIn(serializer2.data, response.data["results"])
         self.assertIn(serializer1.data, response.data["results"])
 
-    # def test_return_borrowing(self) -> None:
-    #     book = test_book(title="Kobzar", author="Taras")
-    #     borrowing = test_borrowing(book=book, user=self.user)
-    #     inventory = borrowing.book.inventory
-    #     print(borrowing.id)
-    #     print(borrowing.borrow_date)
-    #     url = detail_url(borrowing.id) + "return" return_borrowing_url
-    #     print(url)
-    #     print(borrowing.actual_return_date)
-    #
-    #     response = self.client.post(url)
-    #
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_return_borrowing(self) -> None:
+        book = test_book(title="Kobzar", author="Taras")
+        borrowing = test_borrowing(book=book, user=self.user)
+        inventory = borrowing.book.inventory
+        url = detail_url(borrowing.id)
+        return_url = return_borrowing_url(borrowing.id)
 
-        # borrowing.refresh_from_db()
-        #
-        # print(borrowing.actual_return_date)
+        response1 = self.client.post(return_url)
+        response2 = self.client.get(url)
+
+        borrowing.book.refresh_from_db()
+
+        self.assertEqual(response1.status_code, status.HTTP_200_OK)
+        self.assertEqual(borrowing.book.inventory, inventory + 1)
+        self.assertIsNotNone(response2.data["actual_return_date"])
+
+    def test_return_already_returned_borrowing(self) -> None:
+        book = test_book(title="Kobzar", author="Taras")
+        borrowing = test_borrowing(book=book, user=self.user, actual_return_date=date.today())
+        return_url = return_borrowing_url(borrowing.id)
+
+        response = self.client.post(return_url)
+
+        self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
 
 
 class AdminBorrowingApiTest(TestCase):
@@ -174,7 +184,10 @@ class AdminBorrowingApiTest(TestCase):
 
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
         self.assertEqual(response2.status_code, status.HTTP_200_OK)
-        self.assertEqual(response2.data["expected_return_date"], str(payload["expected_return_date"]))
+        self.assertEqual(
+            response2.data["expected_return_date"],
+            str(payload["expected_return_date"]),
+        )
 
     def test_delete_book(self) -> None:
         borrowing = test_borrowing(user=self.user)

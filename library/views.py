@@ -112,7 +112,7 @@ class BorrowingViewSet(viewsets.ModelViewSet):
 
         return super().get_permissions()
 
-    @action(methods=["POST"], detail=True, url_path="return")
+    @action(methods=["POST"], detail=True, url_path="return-book")
     def return_book(self, request, pk=None):
         borrowing = self.get_object()
         if borrowing.actual_return_date is None:
