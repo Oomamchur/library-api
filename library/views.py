@@ -2,7 +2,7 @@ from datetime import date
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -70,7 +70,7 @@ class BorrowingViewSet(viewsets.ModelViewSet):
                 return BorrowingListStaffSerializer
             return BorrowingListSerializer
 
-        if self.action in ("update", "partial_update", "return"):
+        if self.action in ("update", "partial_update"):
             return BorrowingDetailSerializer
 
         return BorrowingSerializer
@@ -108,7 +108,7 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def get_permissions(self):
-        if self.action in ("update", "partial_update", "destroy"):
+        if self.action == "destroy":
             return [IsAdminUser()]
 
         return super().get_permissions()

@@ -38,11 +38,7 @@ class BorrowingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Borrowing
-        fields = (
-            "id",
-            "expected_return_date",
-            "book",
-        )
+        fields = ("id", "expected_return_date", "book")
 
 
 class BorrowingListSerializer(BorrowingSerializer):
@@ -72,11 +68,20 @@ class BorrowingListStaffSerializer(BorrowingListSerializer):
         )
 
 
-class BorrowingDetailSerializer(BorrowingSerializer):
+class BorrowingDetailSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data) -> object:
+        return_date = validated_data.get(
+            "expected_return_date", instance.expected_return_date
+        )
+        if return_date < date.today():
+            raise serializers.ValidationError(
+                "Return date can't be earlier than today"
+            )
+        instance.expected_return_date = return_date
+        instance.save()
+        return instance
+
     class Meta:
         model = Borrowing
-        fields = (
-            "id",
-            "expected_return_date",
-        )
-
+        fields = ("id", "expected_return_date", "book")
+        read_only_fields = ("book",)

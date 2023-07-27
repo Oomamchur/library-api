@@ -1,33 +1,22 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
 class Book(models.Model):
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
-    inventory = models.IntegerField()
-    daily_fee = models.DecimalField(max_digits=5, decimal_places=2)
+    inventory = models.IntegerField(validators=[MinValueValidator(0)])
+    daily_fee = models.DecimalField(
+        max_digits=5, decimal_places=2, validators=[MinValueValidator(0)]
+    )
 
     cover_choices = (("HARD", "hard cover"), ("SOFT", "soft cover"))
 
     cover = models.CharField(
         max_length=60, choices=cover_choices, default="SOFT"
     )
-
-    def clean(self) -> None:
-        if self.daily_fee < 0:
-            raise ValidationError(
-                f"Daily fee should be a positive number, not {self.daily_fee}"
-            )
-        if self.inventory < 0:
-            raise ValidationError(
-                f"Inventory fee should be a positive number, not {self.inventory}"
-            )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["title", "author"]
