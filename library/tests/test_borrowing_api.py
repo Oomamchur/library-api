@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -129,7 +129,9 @@ class AuthenticatedBorrowingApiTests(TestCase):
 
     def test_return_already_returned_borrowing(self) -> None:
         book = test_book(title="Kobzar", author="Taras")
-        borrowing = test_borrowing(book=book, user=self.user, actual_return_date=date.today())
+        borrowing = test_borrowing(
+            book=book, user=self.user, actual_return_date=date.today()
+        )
         return_url = return_borrowing_url(borrowing.id)
 
         response = self.client.post(return_url)
