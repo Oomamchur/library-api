@@ -56,16 +56,20 @@ class UnauthenticatedBorrowingApiTests(TestCase):
 class AuthenticatedBorrowingApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
+        self.admin = get_user_model().objects.create_user(
+            "admin123@admin.com", "test1234", is_staff=True
+        )
         self.user = get_user_model().objects.create_user(
             "test123@test.com",
             "Test1234",
         )
         self.client.force_authenticate(self.user)
 
-    def test_list_borrowing(self) -> None:
+    def test_list_borrowing_only_for_authenticated_user(self) -> None:
+        book = test_book(title="Kobzar", author="Taras")
         test_borrowing(user=self.user)
-
-        borrowings = Borrowing.objects.all()
+        test_borrowing(book=book, user=self.admin)
+        borrowings = Borrowing.objects.filter(user=self.user)
         serializer = BorrowingListSerializer(borrowings, many=True)
 
         response = self.client.get(BORROWING_URL)
